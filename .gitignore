@@ -1,0 +1,16 @@
+# 外部下载的二进制（不应入版本库）
+pandoc-*.tar.gz
+pandoc-*.zip
+*.bak
+
+# Docker 构建产物
+*.tar
+*.tar.gz
+!dependencies.md      # 清单文件保留
+!matplotlibrc
+!soffice.py
+!verify.py
+
+# 运行时生成
+__pycache__/
+*.pyc
