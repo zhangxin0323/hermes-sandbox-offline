@@ -15,7 +15,6 @@ hermes-sandbox/
 ├── download-deps.ps1                   # 外部依赖下载脚本（需联网）
 ├── soffice.py                          # LibreOffice 沙箱 wrapper（防挂起）
 ├── verify.py                           # 包验证脚本（构建时自检）
-├── matplotlibrc                        # matplotlib 中文字体配置
 └── pandoc-3.1.11-linux-amd64.tar.gz  # 外部二进制：Pandoc 文档转换工具
     # ↑ 此文件不入版本库，需手动下载或运行 download-deps.ps1
 ```
@@ -48,7 +47,7 @@ hermes-sandbox/
 
 ```bash
 # 构建
-# docker build -t hermes-sandbox-python312:20260810v1 -f Dockerfile .
+# docker build -t hermes-sandbox-python312:20260812v2 -f Dockerfile .
 
 # 查看镜像
 docker images | findstr hermes-sandbox
@@ -60,10 +59,10 @@ docker images | findstr hermes-sandbox
 
 ```bash
 # 验证所有 Python 包
-docker run --rm hermes-sandbox-python312:20260810v1 python3 /tmp/verify.py
+docker run --rm hermes-sandbox-python312:20260812v2 python3 /tmp/verify.py
 
 # 验证中文字体
-docker run --rm hermes-sandbox-python312:20260810v1 python3 -c "
+docker run --rm hermes-sandbox-python312:20260812v2 python3 -c "
 import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
 plt.text(0.5, 0.5, '中文测试', ha='center', fontsize=20)
@@ -72,7 +71,7 @@ print('中文渲染 OK')
 "
 
 # 验证 pandoc
-docker run --rm hermes-sandbox-python312:20260810v1 pandoc --version
+docker run --rm hermes-sandbox-python312:20260812v2 pandoc --version
 ```
 
 ---
@@ -84,12 +83,22 @@ docker run --rm hermes-sandbox-python312:20260810v1 pandoc --version
 ```yaml
 terminal:
   backend: docker
-  docker_image: hermes-sandbox-python312:20260810v1
+  docker_image: hermes-sandbox-python312:20260812v2
   network: "none"
   container_cpu: 4
   container_memory: 5120
   container_disk: 51200
   container_persistent: true
+```
+
+---
+
+## 告诉 Hermes 沙箱有哪些工具
+
+新建 Hermes 对话，输入：
+
+```
+请你记住沙箱的 `/opt/hermes/dependencies.md` 文件记录了沙箱中所有可用的软件和 Python 包。
 ```
 
 ---
@@ -102,6 +111,7 @@ terminal:
 | PPT 生成（Python） | `python-pptx` |
 | PPT 生成（JS） | `pptxgenjs` |
 | Word 读写 | `python-docx` |
+| Word 模板渲染（邮件合并/合同） | `docxtpl` |
 | Excel 读写 | `openpyxl`, `xlsxwriter`, `python-calamine` |
 | PDF 转换 | `soffice`, `pdftoppm` |
 | PDF 文本/表格提取 | `PyMuPDF`, `pdfplumber` |
@@ -113,6 +123,7 @@ terminal:
 | 数据库（通用） | `psycopg2`, `pymongo`, `redis`, `sqlalchemy`, `pymysql` |
 | 数据库（国产） | `sqlcipher3`（微信/钉钉）, `oracledb`, `dmPython` |
 | 文档转换 | `pandoc`, `pypandoc` |
+| 游戏/多媒体引擎 | `pygame` |
 
 ---
 
@@ -122,6 +133,8 @@ terminal:
 |------|------|------|
 | `20260731v1` | 2026-07-31 | 初始版本，基础 Office + 数据处理 |
 | `20260810v1` | 2026-08-10 | 新增 OCR、流程图、思维导图、国产数据库、中文字体、新版 Pandoc |
+| `20260812v2` | 2026-08-12 | 修复 matplotlib 中文渲染（matplotlibrc 完整版覆盖） |
+| `20260812v2` | 2026-08-12 | 新增 `docxtpl` Word 模板渲染 |
 
 ---
 

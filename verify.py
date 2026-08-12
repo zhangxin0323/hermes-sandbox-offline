@@ -16,6 +16,7 @@ PACKAGES = [
     ("xlrd", "import xlrd"),
     ("xlsxwriter", "import xlsxwriter"),
     ("python-docx", "import docx"),
+    ("docxtpl", "from docxtpl import DocxTemplate"),        # ← 新增
     ("python-calamine", "import python_calamine"),
     ("psycopg2-binary", "import psycopg2"),
     ("pymongo", "import pymongo"),
@@ -27,6 +28,7 @@ PACKAGES = [
     ("jinja2", "import jinja2"),
     ("tabulate", "import tabulate"),
     ("tqdm", "import tqdm"),
+    ("pygame", "import pygame"),                              # ← 新增
     ("pypandoc", "import pypandoc"),
     ("PyMuPDF", "import fitz"),
     ("pdfplumber", "import pdfplumber"),

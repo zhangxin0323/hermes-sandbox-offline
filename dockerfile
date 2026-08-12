@@ -103,12 +103,12 @@ RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/
 RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
     markitdown[pptx] Pillow defusedxml lxml python-pptx python-docx \
     openpyxl xlrd xlsxwriter python-calamine olefile \
-    PyMuPDF pdfplumber pytesseract pypandoc
+    PyMuPDF pdfplumber pytesseract pypandoc docxtpl
 
 # 批次 2: 数据处理 / 科学计算 / 可视化
 RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
     pandas numpy scipy chardet python-magic xlsx2csv unstructured \
-    matplotlib seaborn plotly kaleido
+    matplotlib seaborn plotly kaleido pygame
 
 # 批次 3: 流程图 / 思维导图
 RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
@@ -135,7 +135,11 @@ RUN python3 /tmp/verify.py
 COPY dependencies.md /opt/hermes/dependencies.md
 RUN chmod 644 /opt/hermes/dependencies.md
 
-COPY matplotlibrc /usr/local/lib/python3.12/site-packages/matplotlib/mpl-data/matplotlibrc
+# 追加中文字体配置（保留原始 matplotlibrc 完整性，避免参数缺失）
+# 用 sed 修改现有配置项（避免重复键）
+RUN sed -i 's/^#*font.family:.*/font.family: sans-serif/' /usr/local/lib/python3.12/site-packages/matplotlib/mpl-data/matplotlibrc && \
+    sed -i 's/^#*font.sans-serif:.*/font.sans-serif: WenQuanYi Zen Hei, Noto Sans CJK SC, SimHei, DejaVu Sans, sans-serif/' /usr/local/lib/python3.12/site-packages/matplotlib/mpl-data/matplotlibrc && \
+    sed -i 's/^#*axes.unicode_minus:.*/axes.unicode_minus: False/' /usr/local/lib/python3.12/site-packages/matplotlib/mpl-data/matplotlibrc
 
 # =============================================================================
 # LibreOffice 沙箱 wrapper

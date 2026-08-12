@@ -1,7 +1,7 @@
 # Hermes 沙箱依赖清单
 
-&gt; 镜像: hermes-sandbox-python312:20260810v2  
-&gt; 生成日期: 2026-08-10  
+&gt; 镜像: hermes-sandbox-python312:20260812v2  
+&gt; 生成日期: 2026-08-12
 &gt; 用途: PowerPoint/Office 处理 + 数据处理 + 国产/Oracle 数据库 + 流程图/思维导图 + OCR + 中文图表渲染
 
 ---
@@ -41,6 +41,7 @@
 | pdfplumber | PDF 表格精准提取 | `pdfplumber.open("file.pdf")` |
 | pytesseract | Tesseract OCR Python 接口 | `pytesseract.image_to_string(img)` |
 | pypandoc | Python 调用 pandoc | `pypandoc.convert_file("file.md", "docx")` |
+| docxtpl | Word 模板渲染（Jinja2 邮件合并/合同生成） | `DocxTemplate("tpl.docx").render({"name": "x"})` |
 
 ### 数据处理 / 科学计算
 | 包名 | 用途 |
@@ -89,15 +90,14 @@
 &gt; 注: dmPython 如清华源缺失，需从达梦安装盘 `$DM_HOME/drivers/python/dmPython/` 手动安装
 
 ### 常用工具
-| 包名 | 用途 |
-|------|------|
-| requests | HTTP 请求 |
-| pyyaml | YAML 解析 |
-| jinja2 | 模板引擎 |
-| tabulate | 表格格式化输出 |
-| tqdm | 进度条 |
-| defusedxml | 安全 XML 解析 |
-| lxml | XML/HTML 处理 |
+| 包名 | 用途 | 典型调用 |
+|------|------|----------|
+| requests | HTTP 请求 | `requests.get(url)` |
+| pyyaml | YAML 解析 | `yaml.safe_load(f)` |
+| jinja2 | 模板引擎 | `Template("Hello {{name}}").render(name="x")` |
+| tabulate | 表格格式化输出 | `tabulate(data, headers, tablefmt="grid")` |
+| tqdm | 进度条 | `tqdm(iterable)` |
+| pygame | 游戏/多媒体引擎（音频播放、简单 GUI、交互可视化） | `pygame.mixer.Sound("file.wav").play()` |
 
 ---
 
@@ -141,3 +141,18 @@ print('中文渲染 OK')
 
 # Node.js
 node -e "console.log(require('pptxgenjs').VERSION)"
+```
+
+## 六、已知限制
+
+| 场景 | 说明 |  workaround |
+|------|------|-------------|
+| WPS 私有格式 (.wps/.et/.dps) | 无原生 Python 读写库 | 通过 `soffice --convert-to` 转为 docx/xlsx/pptx 后处理 |
+| Visio (.vsdx) | 无 Python 编辑库 | 用 `diagrams` / `graphviz` 生成 PNG/SVG/XMind 替代 |
+| dmPython (达梦) | 清华 PyPI 源可能缺失，无预编译 wheel | 从达梦安装盘 `$DM_HOME/drivers/python/dmPython/` 手动安装 |
+| 微信/钉钉加密数据库 | SQLCipher 加密，需正确 PRAGMA key | 使用 `sqlcipher3` 连接，密码错误会返回空数据或报错 |
+| 中文字体渲染 | 文泉驿字体缺少 `weight=400`，matplotlib 会 fallback 到 500 | 不影响显示，可忽略警告；或额外安装 `fonts-wqy-microhei` |
+| 网络访问 | 沙箱默认 `network: "none"` | 如需联网，在 Hermes `config.yaml` 中改为 `network: "bridge"` |
+| LibreOffice headless | 容器内无真实 X11，依赖 `xvfb-run` 虚拟显示兜底 | 已通过 `soffice.py` wrapper 自动处理，无需手动干预 |
+| 沙箱生命周期 | `auto_remove: true`，容器退出后文件丢失 | 交付物必须写到 `/mnt/output` 或 `/workspace` 等持久化挂载目录 |
+| 达梦/人大金仓专用驱动 | `dmPython` / `kingbase` 可能版本滞后 | 优先使用标准接口：`sqlcipher3` 替代 `pysqlcipher3`，`psycopg2` 兼容 Kingbase |
