@@ -1,6 +1,6 @@
 # Hermes Full-Stack Sandbox
 
-> A complete sandbox environment for Hermes Agent, supporting PowerPoint/Office processing, data analytics, domestic Chinese databases, flowcharts/mindmaps, OCR, and CJK font rendering.
+> A complete sandbox environment for Hermes Agent, supporting PowerPoint/Office processing, data analytics, domestic Chinese databases, flowcharts/mindmaps, OCR, official-document (公文) font rendering, video processing, and process management.
 
 ---
 
@@ -13,9 +13,15 @@ hermes-sandbox/
 ├── README_EN.md                        # This file (English)
 ├── .gitignore                          # Git ignore rules
 ├── dependencies.md                     # Sandbox dependency manifest (read by Hermes)
-├── download-deps.ps1                   # External dependency download script (requires internet)
+├── download-deps.ps1                   # External dependency download script (internet, pandoc only)
 ├── soffice.py                          # LibreOffice sandbox wrapper (prevents hangs)
-├── verify.py                           # Package verification script (runtime self-check)
+├── verify.py                           # Package/system-tool/font verification script (runtime self-check)
+├── fonts/                              # Official-document fonts dir (GB2312 series, placed manually)
+│   ├── FZXBSJW.TTF                     # FangZheng XiaoBiaoSong (doc title)
+│   ├── simfang.ttf                     # FangSong_GB2312 (doc body)
+│   ├── simhei.ttf                      # SimHei / 黑体 (level-1 heading)
+│   ├── simkai.ttf                      # KaiTi_GB2312 (level-2 heading)
+│   └── simsun.ttc                      # SimSun / 宋体
 └── pandoc-3.1.11-linux-amd64.tar.gz  # External binary: Pandoc document converter
     # ↑ This file is excluded from version control; download manually or run download-deps.ps1
 ```
@@ -24,11 +30,14 @@ hermes-sandbox/
 
 ## External Dependencies
 
-Place the following file in this directory before building:
+Place the following files in this directory before building:
 
 | File | Source | Description |
 |------|--------|-------------|
 | `pandoc-3.1.11-linux-amd64.tar.gz` | [GitHub: jgm/pandoc/releases](https://github.com/jgm/pandoc/releases) | Document converter (Markdown / Word / PDF) |
+| `fonts/` (FangSong_GB2312, KaiTi_GB2312, FangZheng XiaoBiaoSong, SimHei, SimSun) | Windows built-in fonts or your own font assets | Official-document fonts for checking document typesetting after PDF conversion |
+
+> `download-deps.ps1` only downloads pandoc. The `fonts/` folder must be populated manually before building; the Dockerfile auto-imports it via `COPY ./fonts/*` into `/usr/share/fonts/truetype/custom` and rebuilds the font cache.
 
 ### Download Methods
 
@@ -48,7 +57,7 @@ Visit https://github.com/jgm/pandoc/releases and download `pandoc-3.1.11-linux-a
 
 ```bash
 # Build
-docker build -t hermes-sandbox-python312:20260812v2 -f Dockerfile .
+docker build -t hermes-sandbox-python312:20260901v1 -f Dockerfile .
 
 # Verify image
 docker images | grep hermes-sandbox
@@ -59,11 +68,20 @@ docker images | grep hermes-sandbox
 ## Verify Sandbox
 
 ```bash
-# Verify all Python packages
-docker run --rm hermes-sandbox-python312:20260812v2 python3 /tmp/verify.py
+# Verify all Python packages / system tools / official-document fonts
+docker run --rm hermes-sandbox-python312:20260901v1 python3 /tmp/verify.py
+
+# Verify ffmpeg video processing
+docker run --rm hermes-sandbox-python312:20260901v1 ffmpeg -version
+
+# Verify ps / grep / kill process management
+docker run --rm hermes-sandbox-python312:20260901v1 ps -ef
+
+# Verify official-document fonts
+docker run --rm hermes-sandbox-python312:20260901v1 fc-list : family | grep -E "FangSong|KaiTi|SimHei|SimSun"
 
 # Verify Chinese font rendering
-docker run --rm hermes-sandbox-python312:20260812v2 python3 -c "
+docker run --rm hermes-sandbox-python312:20260901v1 python3 -c "
 import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
 plt.text(0.5, 0.5, '中文测试', ha='center', fontsize=20)
@@ -72,7 +90,7 @@ print('CJK rendering OK')
 "
 
 # Verify pandoc
-docker run --rm hermes-sandbox-python312:20260812v2 pandoc --version
+docker run --rm hermes-sandbox-python312:20260901v1 pandoc --version
 ```
 
 ---
@@ -84,7 +102,7 @@ Add the following to your Hermes `config.yaml`:
 ```yaml
 terminal:
   backend: docker
-  docker_image: hermes-sandbox-python312:20260812v2
+  docker_image: hermes-sandbox-python312:20260901v1
   network: "none"
   container_cpu: 4
   container_memory: 5120
@@ -117,6 +135,9 @@ Please remember that `/opt/hermes/dependencies.md` in the sandbox records all av
 | PDF conversion | `soffice`, `pdftoppm` |
 | PDF text/table extraction | `PyMuPDF`, `pdfplumber` |
 | OCR | `tesseract-ocr`, `pytesseract` |
+| Official-document (公文) typesetting check | FangZheng XiaoBiaoSong / FangSong_GB2312 / SimHei / KaiTi_GB2312 / SimSun fonts |
+| Video processing | `ffmpeg`, `ffprobe` (trim/transcode then recognize) |
+| Process management | `ps`, `grep`, `kill` |
 | Data processing | `pandas`, `numpy`, `scipy` |
 | Visualization | `matplotlib`, `seaborn`, `plotly`, `kaleido` |
 | Flowcharts / architecture diagrams | `graphviz`, `diagrams`, `networkx` |
@@ -134,8 +155,8 @@ Please remember that `/opt/hermes/dependencies.md` in the sandbox records all av
 |---------|------|-------|
 | `20260731v1` | 2026-07-31 | Initial release: basic Office + data processing |
 | `20260810v1` | 2026-08-10 | Added OCR, flowcharts, mindmaps, domestic databases, CJK fonts, updated Pandoc |
-| `20260812v1` | 2026-08-12 | Fixed matplotlib CJK rendering (full matplotlibrc replacement) |
 | `20260812v2` | 2026-08-12 | Added `docxtpl` Word template rendering and `pygame` multimedia engine |
+| `20260901v1` | 2026-09-01 | Added official-document fonts (公文) for checking typesetting after PDF conversion, `ffmpeg`/`ffprobe` video processing, and `ps`/`grep`/`kill` process tools |
 
 ---
 

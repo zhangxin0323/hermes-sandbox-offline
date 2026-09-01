@@ -1,6 +1,6 @@
 # Hermes Full-Stack Sandbox
 
-> 为 Hermes Agent 提供 PowerPoint/Office 处理 + 数据处理 + 国产数据库 + 流程图/思维导图 + OCR + 中文图表渲染的完整沙箱环境。
+> 为 Hermes Agent 提供 PowerPoint/Office 处理 + 数据处理 + 国产数据库 + 流程图/思维导图 + OCR + 公文字体渲染 + 视频处理 + 进程管理的完整沙箱环境。
 
 ---
 
@@ -12,9 +12,15 @@ hermes-sandbox/
 ├── README.md                           # 本文件
 ├── .gitignore                          # Git 忽略规则
 ├── dependencies.md                     # 沙箱依赖清单（供 Hermes 读取）
-├── download-deps.ps1                   # 外部依赖下载脚本（需联网）
+├── download-deps.ps1                   # 外部依赖下载脚本（需联网，仅 pandoc）
 ├── soffice.py                          # LibreOffice 沙箱 wrapper（防挂起）
-├── verify.py                           # 包验证脚本（构建时自检）
+├── verify.py                           # 包/系统工具/字体验证脚本（构建时自检）
+├── fonts/                              # 公文字体目录（GB2312 系列，需手动放置）
+│   ├── FZXBSJW.TTF                     # 方正小标宋简体（公文标题）
+│   ├── simfang.ttf                     # 仿宋_GB2312（公文正文）
+│   ├── simhei.ttf                      # 黑体（一级标题）
+│   ├── simkai.ttf                      # 楷体_GB2312（二级标题）
+│   └── simsun.ttc                      # 宋体
 └── pandoc-3.1.11-linux-amd64.tar.gz  # 外部二进制：Pandoc 文档转换工具
     # ↑ 此文件不入版本库，需手动下载或运行 download-deps.ps1
 ```
@@ -28,6 +34,9 @@ hermes-sandbox/
 | 文件 | 来源 | 说明 |
 |------|------|------|
 | `pandoc-3.1.11-linux-amd64.tar.gz` | [GitHub: jgm/pandoc/releases](https://github.com/jgm/pandoc/releases) | 文档转换工具（Markdown / Word / PDF） |
+| `fonts/`（仿宋_GB2312、楷体_GB2312、方正小标宋简体、黑体、宋体） | 由 Windows 自带字体或自有字体资源获取 | 公文字体，供转换 PDF 后检查公文版式格式 |
+
+> `download-deps.ps1` 目前只下载 pandoc；`fonts/` 目录需要在构建前手动放置字体文件（Dockerfile 会通过 `COPY ./fonts/*` 自动导入 `/usr/share/fonts/truetype/custom` 并重建字体缓存）。
 
 ### 下载方式
 
@@ -47,7 +56,7 @@ hermes-sandbox/
 
 ```bash
 # 构建
-# docker build -t hermes-sandbox-python312:20260812v2 -f Dockerfile .
+docker build -t hermes-sandbox-python312:20260901v1 -f Dockerfile .
 
 # 查看镜像
 docker images | findstr hermes-sandbox
@@ -58,11 +67,21 @@ docker images | findstr hermes-sandbox
 ## 验证沙箱
 
 ```bash
-# 验证所有 Python 包
-docker run --rm hermes-sandbox-python312:20260812v2 python3 /tmp/verify.py
+# 验证所有 Python 包 / 系统工具 / 公文字体
+docker run --rm hermes-sandbox-python312:20260901v1 python3 /tmp/verify.py
 
-# 验证中文字体
-docker run --rm hermes-sandbox-python312:20260812v2 python3 -c "
+# 验证 ffmpeg 视频处理
+docker run --rm hermes-sandbox-python312:20260901v1 ffmpeg -version
+
+# 验证 ps / grep / kill 进程管理
+docker run --rm hermes-sandbox-python312:20260901v1 ps -ef
+docker run --rm hermes-sandbox-python312:20260901v1 printenv PATH | grep bin
+
+# 验证公文字体（应看到 仿宋_GB2312 / 楷体_GB2312 / 方正小标宋简体）
+docker run --rm hermes-sandbox-python312:20260901v1 fc-list : family | grep -E "仿宋|楷体|黑体|宋体|FangSong|KaiTi"
+
+# 验证中文字体渲染
+docker run --rm hermes-sandbox-python312:20260901v1 python3 -c "
 import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
 plt.text(0.5, 0.5, '中文测试', ha='center', fontsize=20)
@@ -71,7 +90,7 @@ print('中文渲染 OK')
 "
 
 # 验证 pandoc
-docker run --rm hermes-sandbox-python312:20260812v2 pandoc --version
+docker run --rm hermes-sandbox-python312:20260901v1 pandoc --version
 ```
 
 ---
@@ -83,7 +102,7 @@ docker run --rm hermes-sandbox-python312:20260812v2 pandoc --version
 ```yaml
 terminal:
   backend: docker
-  docker_image: hermes-sandbox-python312:20260812v2
+  docker_image: hermes-sandbox-python312:20260901v1
   network: "none"
   container_cpu: 4
   container_memory: 5120
@@ -116,6 +135,9 @@ terminal:
 | PDF 转换 | `soffice`, `pdftoppm` |
 | PDF 文本/表格提取 | `PyMuPDF`, `pdfplumber` |
 | OCR | `tesseract-ocr`, `pytesseract` |
+| 公文版式检查 | 公文字体（方正小标宋简体 / 仿宋_GB2312 / 黑体 / 楷体_GB2312 / 宋体） |
+| 视频处理 | `ffmpeg`, `ffprobe`（视频裁剪/转码后识别） |
+| 系统进程管理 | `ps`, `grep`, `kill` |
 | 数据处理 | `pandas`, `numpy`, `scipy` |
 | 可视化 | `matplotlib`, `seaborn`, `plotly`, `kaleido` |
 | 流程图/架构图 | `graphviz`, `diagrams`, `networkx` |
@@ -133,8 +155,8 @@ terminal:
 |------|------|------|
 | `20260731v1` | 2026-07-31 | 初始版本，基础 Office + 数据处理 |
 | `20260810v1` | 2026-08-10 | 新增 OCR、流程图、思维导图、国产数据库、中文字体、新版 Pandoc |
-| `20260812v2` | 2026-08-12 | 修复 matplotlib 中文渲染（matplotlibrc 完整版覆盖） |
-| `20260812v2` | 2026-08-12 | 新增 `docxtpl` Word 模板渲染 |
+| `20260812v2` | 2026-08-12 | 新增 `docxtpl` Word 模板渲染、`pygame` 多媒体引擎 |
+| `20260901v1` | 2026-09-01 | 新增公文字体（PDF 转换后检查公文格式）、`ffmpeg`/`ffprobe` 视频处理、`ps`/`grep`/`kill` 进程工具 |
 
 ---
 

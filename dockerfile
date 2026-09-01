@@ -2,16 +2,17 @@
 # Hermes Full-Stack Sandbox for Windows / WSL2 / Docker Desktop
 # =============================================================================
 # 基础: Python 3.12 (slim) + Node.js 22 + LibreOffice + Poppler + Pandoc
-# 功能: PPT/Word/Excel 处理 + 数据处理 + 数据库(含国产) + 流程图/思维导图 + OCR
+# 功能: PPT/Word/Excel 处理 + 数据处理 + 数据库(含国产) + 流程图/思维导图 + OCR + 视频处理
 #
 # 构建:
-#   docker build -t hermes-sandbox-python312:20260810v1 -f Dockerfile .
+#   docker build -t hermes-sandbox-python312:20260901v1 -f Dockerfile .
 #
 # 外部依赖文件（需放在 Dockerfile 同级目录）:
 #   - soffice.py          LibreOffice 沙箱 wrapper
 #   - verify.py           包验证脚本
 #   - dependencies.md     沙箱依赖清单（供 Hermes 读取）
 #   - matplotlibrc        中文字体配置
+#   - fonts/              公文字体目录（需包含仿宋_GB2312、楷体_GB2312 等 .ttf/.ttc 文件）
 # =============================================================================
 
 # ---- 阶段 1: 构建阶段（编译原生扩展）----
@@ -49,7 +50,7 @@ ENV PYTHONUNBUFFERED=1 \
     WORKDIR=/workspace
 
 # =============================================================================
-# 安装新版pandoc
+# 安装新版 pandoc
 # =============================================================================
 COPY ./pandoc-3.1.11-linux-amd64.tar.gz /tmp/
 RUN tar xvzf /tmp/pandoc-3.1.11-linux-amd64.tar.gz --strip-components 1 -C /usr/local/ \
@@ -57,12 +58,14 @@ RUN tar xvzf /tmp/pandoc-3.1.11-linux-amd64.tar.gz --strip-components 1 -C /usr/
     && pandoc --version
 
 # =============================================================================
-# 系统依赖（换清华源）
+# 系统依赖（换清华源）—— 增加 ffmpeg、procps(ps)、grep、fontconfig(字体缓存)
 # =============================================================================
 RUN sed -i 's|http://deb.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources \
     && sed -i 's|http://security.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources \
     && apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl gnupg git unzip zip \
+    procps grep psmisc \
+    ffmpeg \
     libreoffice libreoffice-impress libreoffice-calc libreoffice-writer libreoffice-common \
     poppler-utils \
     libjpeg62-turbo libpng16-16 libfreetype6 liblcms2-2 libopenjp2-7 \
@@ -74,12 +77,21 @@ RUN sed -i 's|http://deb.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc
     tesseract-ocr libtesseract-dev \
     graphviz libgraphviz-dev \
     libsqlcipher-dev \
-	dbus-x11 \
+    dbus-x11 \
     xvfb \
-	sqlcipher \
+    sqlcipher \
     libstdc++6 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
+
+# =============================================================================
+# 安装公文字体（仿宋_GB2312、楷体_GB2312 等）
+# 将字体文件放在 Dockerfile 同级目录的 fonts/ 文件夹内，构建时自动导入
+# =============================================================================
+RUN mkdir -p /usr/share/fonts/truetype/custom
+COPY ./fonts/* /usr/share/fonts/truetype/custom/
+RUN fc-cache -fv /usr/share/fonts/truetype/custom \
+    && fc-list : family | sort | uniq
 
 # =============================================================================
 # Node.js 22 + pptxgenjs
@@ -138,7 +150,7 @@ RUN chmod 644 /opt/hermes/dependencies.md
 # 追加中文字体配置（保留原始 matplotlibrc 完整性，避免参数缺失）
 # 用 sed 修改现有配置项（避免重复键）
 RUN sed -i 's/^#*font.family:.*/font.family: sans-serif/' /usr/local/lib/python3.12/site-packages/matplotlib/mpl-data/matplotlibrc && \
-    sed -i 's/^#*font.sans-serif:.*/font.sans-serif: WenQuanYi Zen Hei, Noto Sans CJK SC, SimHei, DejaVu Sans, sans-serif/' /usr/local/lib/python3.12/site-packages/matplotlib/mpl-data/matplotlibrc && \
+    sed -i 's/^#*font.sans-serif:.*/font.sans-serif: WenQuanYi Zen Hei, Noto Sans CJK SC, SimHei, FangSong_GB2312, KaiTi_GB2312, DejaVu Sans, sans-serif/' /usr/local/lib/python3.12/site-packages/matplotlib/mpl-data/matplotlibrc && \
     sed -i 's/^#*axes.unicode_minus:.*/axes.unicode_minus: False/' /usr/local/lib/python3.12/site-packages/matplotlib/mpl-data/matplotlibrc
 
 # =============================================================================
