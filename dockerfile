@@ -15,29 +15,6 @@
 #   - fonts/              公文字体目录（需包含仿宋_GB2312、楷体_GB2312 等 .ttf/.ttc 文件）
 # =============================================================================
 
-# ---- 阶段 1: 构建阶段（编译原生扩展）----
-FROM python:3.12-slim-bookworm AS builder
-
-# 换清华源，安装编译依赖
-RUN sed -i 's|http://deb.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources \
-    && sed -i 's|http://security.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources \
-    && apt-get update && apt-get install -y --no-install-recommends \
-    gcc g++ make cmake python3-dev libffi-dev \
-    libxml2-dev libxslt1-dev libjpeg-dev libpng-dev \
-    libfreetype6-dev liblcms2-dev libopenjp2-7-dev \
-    libtiff-dev libwebp-dev zlib1g-dev \
-    libpq-dev libssl-dev cargo libgraphviz-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# 升级 pip（清华源）
-RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
-    --upgrade pip setuptools wheel
-
-# 仅放必须编译的包（无预编译 wheel 或需要系统头文件）
-RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --user \
-    psycopg2-binary \
-    python-calamine
-
 # ---- 阶段 2: 运行时阶段 ----
 FROM python:3.12-slim-bookworm
 
@@ -104,10 +81,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 RUN npm install -g pptxgenjs@3.12.0 && npm cache clean --force
 
 # =============================================================================
-# Python 依赖
+# Python 依赖（psycopg2-binary / python-calamine 有预编译 wheel，无需 builder 编译阶段）
 # =============================================================================
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
+    psycopg2-binary python-calamine
 
 RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --upgrade pip
 
