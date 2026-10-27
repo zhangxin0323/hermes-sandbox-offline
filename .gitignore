@@ -3,6 +3,9 @@ pandoc-*.tar.gz
 pandoc-*.zip
 *.bak
 
+#字体
+fonts/
+
 # Docker 构建产物
 *.tar
 *.tar.gz

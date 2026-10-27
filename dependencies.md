@@ -1,8 +1,8 @@
 # Hermes 沙箱依赖清单
 
-> 镜像: hermes-sandbox-python312:20260901v1  
-> 生成日期: 2026-09-01  
-> 用途: PowerPoint/Office 处理 + 数据处理 + 国产/Oracle 数据库 + 流程图/思维导图 + OCR + 公文字体渲染 + 视频处理 + 进程管理
+> 镜像: hermes-sandbox-python312:20261027v1  
+> 生成日期: 2026-10-27  
+> 用途: PowerPoint/Office 处理 + 数据处理 + 国产/Oracle 数据库 + 流程图/思维导图 + OCR + 公文字体渲染 + 视频处理 + 进程管理 + 无头浏览器网页调试 + Python Web 应用调试
 
 ---
 
@@ -13,9 +13,9 @@
 | libreoffice / libreoffice-impress / libreoffice-calc / libreoffice-writer | PPT/Excel/Word 转换、渲染 |
 | poppler-utils | PDF 转图片 (pdftoppm) |
 | pandoc | Markdown ↔ Word/PDF/HTML 转换 |
-| **ffmpeg / ffprobe** | **视频裁剪、转码、提帧识别 (20260901v1 新增)** |
-| **procps / psmisc** | **进程管理: `ps` / `kill` (20260901v1 新增)** |
-| **grep** | **文本检索筛选 (20260901v1 新增)** |
+| ffmpeg / ffprobe | 视频裁剪、转码、提帧识别 |
+| procps / psmisc | 进程管理: `ps` / `kill` |
+| grep | 文本检索筛选 |
 | tesseract-ocr / libtesseract-dev | OCR 文字识别 |
 | graphviz / libgraphviz-dev | 流程图渲染引擎 |
 | libfontconfig1 / fontconfig | 字体缓存与渲染 (支撑公文字体与 matplotlib) |
@@ -23,8 +23,12 @@
 | dbus-x11 / xvfb | LibreOffice headless 虚拟显示兜底 |
 | fonts-liberation / fonts-dejavu / fonts-noto-cjk | 西文字体 |
 | fonts-wqy-zenhei / fonts-wqy-microhei | 中文字体 (matplotlib 中文渲染) |
-| **公文字体** (fonts/ 目录, 安装到 `/usr/share/fonts/truetype/custom`) | **方正小标宋简体 / 仿宋_GB2312 / 黑体 / 楷体_GB2312 / 宋体 —— 判断公文版式格式 (20260901v1 新增)** |
+| 公文字体 (fonts/ 目录, 安装到 `/usr/share/fonts/truetype/custom`) | 方正小标宋简体 / 仿宋_GB2312 / 黑体 / 楷体_GB2312 / 宋体 —— 判断公文版式格式 |
 | libsqlcipher-dev / sqlcipher | 加密 SQLite 库与命令行工具（支撑 Python sqlcipher3 连接微信/钉钉数据库） |
+| **libnss3 / libnspr4** | **Chromium 网络安全服务库 (20261027v1 新增)** |
+| **libatk1.0-0 / libatk-bridge2.0-0 / libatspi2.0-0** | **Chromium 辅助功能库 (20261027v1 新增)** |
+| **libcups2 / libdrm2 / libxkbcommon0 / libxcomposite1 / libxdamage1 / libxfixes3 / libxrandr2** | **Chromium X11/显示相关库 (20261027v1 新增)** |
+| **libgbm1 / libpango-1.0-0 / libcairo2 / libasound2** | **Chromium 图形渲染与音频库 (20261027v1 新增)** |
 
 > 公文字体对应关系: 标题→方正小标宋简体(FZXiaoBiaoSong-B05S), 正文→仿宋_GB2312, 一级标题→黑体(SimHei), 二级标题→楷体_GB2312, 表格/一般文字→宋体(SimSun)。转换 PDF/Word 后可用 `fc-match`、`fc-list` 核对字体是否生效。
 
@@ -104,6 +108,23 @@
 | tabulate | 表格格式化输出 | `tabulate(data, headers, tablefmt="grid")` |
 | tqdm | 进度条 | `tqdm(iterable)` |
 | pygame | 游戏/多媒体引擎（音频播放、简单 GUI、交互可视化） | `pygame.mixer.Sound("file.wav").play()` |
+| **charset_normalizer** | **字符编码检测与处理 (20261027v1 新增)** | `charset_normalizer.from_bytes(b).best()` |
+| **geographiclib** | **地理坐标计算、测地线 (20261027v1 新增)** | `Geodesic.WGS84.Inverse(lat1, lon1, lat2, lon2)` |
+
+### Python Web 框架 (20261027v1 新增)
+| 包名 | 用途 | 典型调用 |
+|------|------|----------|
+| flask | 轻量级 Web 框架 | `Flask(__name__).run(host="0.0.0.0", port=5000)` |
+| fastapi | 现代异步 Web 框架（自动 API 文档） | `FastAPI().get("/")(handler)` |
+| uvicorn[standard] | ASGI 服务器（运行 FastAPI） | `uvicorn.run(app, host="0.0.0.0", port=8000)` |
+
+### 无头浏览器 (20261027v1 新增)
+| 包名 | 用途 | 典型调用 |
+|------|------|----------|
+| playwright | 无头 Chromium 自动化（网页调试、截图、布局检查、端到端测试） | `sync_playwright().start().chromium.launch(headless=True)` |
+
+> Playwright 浏览器路径: `/opt/playwright-browsers`（通过 `PLAYWRIGHT_BROWSERS_PATH` 环境变量设置）  
+> 已安装: Chromium（含 ffmpeg 编解码器）
 
 ---
 
@@ -133,13 +154,13 @@ soffice --version              # LibreOffice
 pdftoppm -v                    # Poppler
 pandoc --version               # Pandoc
 tesseract --version            # OCR
-ffmpeg -version                # 视频处理 (20260901v1)
-ffprobe -version               # 视频信息 (20260901v1)
+ffmpeg -version                # 视频处理
+ffprobe -version               # 视频信息
 ps -ef                         # 进程查看
 grep -r "关键字" /path         # 文本检索
 kill -l                       # 进程终止
 
-# 公文字体核对 (20260901v1)
+# 公文字体核对
 fc-list : family | grep -E "仿宋|楷体|FangSong|KaiTi"   # 查看 GB2312 公文家族
 fc-match "仿宋_GB2312"                                  # 查看某字体实际匹配
 fc-match "方正小标宋简体"
@@ -158,6 +179,22 @@ print('中文渲染 OK')
 
 # Node.js
 node -e "console.log(require('pptxgenjs').VERSION)"
+
+# 无头浏览器测试 (20261027v1)
+python3 -c "
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page()
+    page.goto('data:text/html,<h1>Hello</h1>')
+    page.screenshot(path='/tmp/test.png')
+    browser.close()
+print('Playwright OK')
+"
+
+# Web 框架测试 (20261027v1)
+python3 -c "from flask import Flask; print('Flask OK')"
+python3 -c "from fastapi import FastAPI; print('FastAPI OK')"
 ```
 
 ---
@@ -177,3 +214,5 @@ node -e "console.log(require('pptxgenjs').VERSION)"
 | LibreOffice headless | 容器内无真实 X11，依赖 `xvfb-run` 虚拟显示兜底 | 已通过 `soffice.py` wrapper 自动处理，无需手动干预 |
 | 沙箱生命周期 | `auto_remove: true`，容器退出后文件丢失 | 交付物必须写到 `/mnt/output` 或 `/workspace` 等持久化挂载目录 |
 | 达梦/人大金仓专用驱动 | `dmPython` / `kingbase` 可能版本滞后 | 优先使用标准接口：`sqlcipher3` 替代 `pysqlcipher3`，`psycopg2` 兼容 Kingbase |
+| Playwright 浏览器 | Chromium 需下载约 150MB，构建时自动安装 | 如构建失败，检查网络或设置 `PLAYWRIGHT_DOWNLOAD_HOST` 镜像源 |
+| Web 框架端口 | Flask/FastAPI 默认监听 5000/8000 | 沙箱内调试时确保端口未被占用，或指定其他端口 |

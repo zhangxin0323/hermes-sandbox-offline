@@ -45,6 +45,15 @@ PACKAGES = [
     ("sqlcipher3", "import sqlcipher3"),
     ("oracledb", "import oracledb"),
     ("dmPython", "import dmPython"),  # 如离线安装失败则注释
+    # 20261027v1 新增: Python Web 框架
+    ("flask", "from flask import Flask"),
+    ("fastapi", "from fastapi import FastAPI"),
+    ("uvicorn", "import uvicorn"),
+    # 20261027v1 新增: 无头浏览器
+    ("playwright", "from playwright.sync_api import sync_playwright"),
+    # 20261027v1 新增: 工具库
+    ("charset_normalizer", "import charset_normalizer"),
+    ("geographiclib", "from geographiclib.geodesic import Geodesic"),
 ]
 
 # 20260901v1 新增: 系统工具（视频处理 / 进程管理 / 文档转换 / OCR 等）
@@ -77,6 +86,11 @@ GONGWEN_FONT_FAMILIES = [
     "KaiTi_GB2312", "楷体_GB2312",
     "SimSun", "宋体",
 ]
+
+# 20261027v1 新增: Playwright 无头 Chromium 浏览器
+PLAYWRIGHT_BROWSERS_PATH = os.environ.get(
+    "PLAYWRIGHT_BROWSERS_PATH", "/opt/playwright-browsers"
+)
 
 failed = []
 
@@ -142,20 +156,40 @@ def check_gongwen_fonts():
     print(f"[公文字体] 文件 {n_ok}/{len(GONGWEN_FONT_FILES)} 通过")
 
 
+def check_playwright_browser():
+    """20261027v1 新增: 验证 Playwright Chromium 浏览器可用。"""
+    print("[Playwright] 检查无头 Chromium 浏览器...")
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto("data:text/html,<h1>Hello</h1>")
+            title = page.title()
+            browser.close()
+        print(f"  OK   Chromium 启动成功 (title={title!r})")
+    except Exception as e:
+        print(f"  FAIL Playwright Chromium: {e}")
+        failed.append(("无头浏览器", "playwright-chromium"))
+
+
 def main():
     failed.clear()
     print("=" * 60)
     print("Hermes Full-Stack Sandbox 验证")
     print("=" * 60)
 
-    print("\n[1/3] Python 包")
+    print("\n[1/4] Python 包")
     check_python_packages()
 
-    print("\n[2/3] 系统工具 (20260901v1)")
+    print("\n[2/4] 系统工具")
     check_system_tools()
 
-    print("\n[3/3] 公文字体 (20260901v1)")
+    print("\n[3/4] 公文字体")
     check_gongwen_fonts()
+
+    print("\n[4/4] Playwright 无头浏览器 (20261027v1)")
+    check_playwright_browser()
 
     print("\n" + "=" * 60)
     if failed:
@@ -165,7 +199,8 @@ def main():
         sys.exit(1)
     else:
         print(f"全部验证通过: Python 包 {len(PACKAGES)} / "
-              f"系统工具 {len(SYSTEM_TOOLS)} / 公文字体 {len(GONGWEN_FONT_FILES)}")
+              f"系统工具 {len(SYSTEM_TOOLS)} / 公文字体 {len(GONGWEN_FONT_FILES)} / "
+              f"Playwright Chromium")
 
 
 if __name__ == "__main__":
