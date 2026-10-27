@@ -5,6 +5,7 @@ pandoc-*.zip
 
 #字体
 fonts/
+!fonts/.gitkeep
 
 # Docker 构建产物
 *.tar
