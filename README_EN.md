@@ -160,7 +160,7 @@ Please remember that `/opt/hermes/dependencies.md` in the sandbox records all av
 | Mind maps | `xmind`, `xmindparser` |
 | Multimedia / audio playback | `pygame` |
 | Databases (general) | `psycopg2`, `pymongo`, `redis`, `sqlalchemy`, `pymysql` |
-| Databases (domestic Chinese) | `sqlcipher3` (WeChat/DingTalk), `oracledb`, `dmPython` |
+| Databases (domestic Chinese) | `sqlcipher3`, `oracledb`, `dmPython` |
 | Document conversion | `pandoc`, `pypandoc` |
 | **Headless browser (20261027v1)** | `playwright` + Chromium (web debugging, screenshots, layout inspection) |
 | **Python Web frameworks (20261027v1)** | `flask`, `fastapi`, `uvicorn` |

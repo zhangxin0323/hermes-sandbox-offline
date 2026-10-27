@@ -159,7 +159,7 @@ terminal:
 | 流程图/架构图 | `graphviz`, `diagrams`, `networkx` |
 | 思维导图 | `xmind`, `xmindparser` |
 | 数据库（通用） | `psycopg2`, `pymongo`, `redis`, `sqlalchemy`, `pymysql` |
-| 数据库（国产） | `sqlcipher3`（微信/钉钉）, `oracledb`, `dmPython` |
+| 数据库（国产） | `sqlcipher3`, `oracledb`, `dmPython` |
 | 文档转换 | `pandoc`, `pypandoc` |
 | 游戏/多媒体引擎 | `pygame` |
 | **无头浏览器（20261027v1）** | `playwright` + Chromium（网页调试、截图、布局检查） |
