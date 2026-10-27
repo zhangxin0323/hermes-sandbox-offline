@@ -124,7 +124,8 @@ RUN pip install --no-cache-dir -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/
 # 安装 Playwright 无头 Chromium 浏览器（含 ffmpeg 编解码器）
 # PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers 已在 ENV 中设置
 # =============================================================================
-RUN playwright install chromium --with-deps \
+RUN PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright \
+    playwright install chromium --with-deps \
     && playwright install-deps chromium \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
